@@ -24,19 +24,6 @@ class RegisterTestCase(APITestCase):
         self.assertIn("email", response.data)
         self.assertIn("user_id", response.data)
 
-    def test_registration_success(self):
-        data = {
-            "username" : "test",
-            "email" : "test@test.de",
-            "password" : "password123",
-            "repeated_password" : "password123",
-            "type" : "customer"
-        }
-
-        response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn("user_id", response.data)
-
     def test_passwords_dont_match(self):
         data = {
             "username" : "test",

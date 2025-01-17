@@ -2,6 +2,8 @@ from rest_framework import serializers
 from user_app.models import CustomUser
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
+from django.utils.timezone import now
+from ..models import GuestToken
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -22,11 +24,10 @@ class RegistrationSerializer(serializers.ModelSerializer):
         try:
             return CustomUser.objects.create_user(**validated_data)
         except IntegrityError as e:
-            # Prüfe, ob der Fehler von einer einzigartigen Einschränkung kommt
             if 'email' in str(e):
-                raise ValidationError({"email": ["Diese E-Mail-Adresse wird bereits verwendet."]})
+                raise ValidationError({"email": ["e-mail already exists."]})
             elif 'username' in str(e):
-                raise ValidationError({"username": ["Dieser Benutzername ist bereits vergeben."]})
+                raise ValidationError({"username": ["username already exists."]})
             raise
     
 class LoginSerializer(serializers.Serializer):
@@ -36,6 +37,25 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, attrs):
         username = attrs.get('username')
         password = attrs.get('password')
+
+        GUEST_USERS = {
+            "andrey": {"password": "asdasd", "type": "customer"},
+            "kevin": {"password": "asdasd24", "type": "business"},
+        }
+
+        if username in GUEST_USERS and password == GUEST_USERS[username]["password"]:
+            user, _ = CustomUser.objects.get_or_create(
+                username=username,
+                defaults={"email": f"{username}@guest.com", "type": GUEST_USERS[username]["type"]}
+            )
+
+            GuestToken.objects.filter(user=user, expires_at__lt=now()).delete()
+
+            token = GuestToken.objects.create(user=user)
+            return {
+                "user": user,
+                "token": token.key,
+            }
 
         if username and password:
             user = CustomUser.objects.filter(username=username).first()
