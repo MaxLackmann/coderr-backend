@@ -5,5 +5,7 @@ from user_app.models import GuestToken
 
 @receiver(post_save, sender=GuestToken)
 def delete_expired_guest_tokens(sender, instance, **kwargs):
-    """Löscht alle abgelaufenen Guest-Tokens, wenn ein neuer Token erstellt wird"""
-    GuestToken.objects.filter(expires_at__lt=now()).delete()
+    """Löscht ALLE abgelaufenen GuestTokens automatisch"""
+    deleted_count, _ = GuestToken.objects.filter(expires_at__lt=now()).delete()
+    if deleted_count > 0:
+        print(f" Deleted {deleted_count} expired GuestTokens")

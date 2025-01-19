@@ -22,15 +22,13 @@ class CustomUser(AbstractUser):
         return f"{self.username} ({self.type})"
     
 def default_expires_at():
-    """Gibt die Standard-Ablaufzeit für Guest-Tokens zurück (24 Stunden später)."""
-    return now() + timedelta(hours=24)
+    return now() + timedelta(seconds=30)
 
 class GuestToken(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="guest_tokens")
     key = models.CharField(max_length=40, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(default=default_expires_at)  # ✅ Richtige Lösung
+    expires_at = models.DateTimeField(default=default_expires_at)
 
     def is_expired(self):
-        """Prüft, ob das Token abgelaufen ist."""
         return now() > self.expires_at

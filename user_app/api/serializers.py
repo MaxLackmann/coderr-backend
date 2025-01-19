@@ -4,6 +4,7 @@ from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
 from django.utils.timezone import now
 from ..models import GuestToken
+from django.utils.crypto import get_random_string
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -48,22 +49,16 @@ class LoginSerializer(serializers.Serializer):
                 username=username,
                 defaults={"email": f"{username}@guest.com", "type": GUEST_USERS[username]["type"]}
             )
+            attrs["user"] = user
+            return attrs
 
-            GuestToken.objects.filter(user=user, expires_at__lt=now()).delete()
+        try:
+            user = CustomUser.objects.get(username=username)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({"username": ["Username does not exist."]})
 
-            token = GuestToken.objects.create(user=user)
-            return {
-                "user": user,
-                "token": token.key,
-            }
-
-        if username and password:
-            user = CustomUser.objects.filter(username=username).first()
-            if not user:
-                raise serializers.ValidationError("Username does not exist.")
-        
-            if not user.check_password(password):
-                raise serializers.ValidationError("Incorrect password.")
+        if not user.check_password(password):
+            raise serializers.ValidationError({"password": ["Wrong password."]})
 
         attrs['user'] = user
         return attrs
