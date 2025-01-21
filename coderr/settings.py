@@ -147,8 +147,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'user_app.api.authentication.GuestTokenAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+        'user_app.api.authentication.CombinedTokenAuthentication'
     ],
 }
 

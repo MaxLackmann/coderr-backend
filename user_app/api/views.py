@@ -5,13 +5,12 @@ from .serializers import RegistrationSerializer, LoginSerializer, ProfileSeriali
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
 from ..models import CustomUser, GuestToken
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
-from .authentication import GuestTokenAuthentication
+from .authentication import CombinedTokenAuthentication
 from .permissions import IsAuthenticatedOrGuest
 from django.utils.crypto import get_random_string
 
 class RegistrationView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -30,6 +29,7 @@ class RegistrationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class LoginView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -56,7 +56,7 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class ProfileView(APIView):
-    authentication_classes = [GuestTokenAuthentication, TokenAuthentication]
+    authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
     def get(self, request, user_id):
         try:
@@ -67,7 +67,7 @@ class ProfileView(APIView):
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         
 class BusinessProfilesView(APIView):
-    authentication_classes = [GuestTokenAuthentication, TokenAuthentication]
+    authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request):
@@ -76,7 +76,7 @@ class BusinessProfilesView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CustomerProfilesView(APIView):
-    authentication_classes = [GuestTokenAuthentication, TokenAuthentication]
+    authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request):

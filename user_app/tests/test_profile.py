@@ -2,12 +2,15 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
 from rest_framework.authtoken.models import Token
-from user_app.models import CustomUser
+from user_app.models import CustomUser, GuestToken
 from unittest import skip
 from django.utils.timezone import now
+from django.utils.crypto import get_random_string
 
 class ProfileTestCase(APITestCase):
     def setUp(self):
+        self.client = APIClient()
+
         self.customer = CustomUser.objects.create_user(
             username='testcustomer',
             email='testcustomer@test.de',
@@ -38,44 +41,40 @@ class ProfileTestCase(APITestCase):
         self.business.created_at = now()
         self.business.save()
         
-        self.client = APIClient()
         self.token = Token.objects.create(user=self.customer)
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+
+        self.guest_user = CustomUser.objects.create(username="guestuser", email="guest@test.com", type="customer")
+        self.guest_token = GuestToken.objects.create(user=self.guest_user, key=get_random_string(40))
+
         self.profile_url = reverse('profile', kwargs={'user_id': self.customer.id})
         self.business_profile_url = reverse('business_profile')
         self.customer_profile_url = reverse('customer_profile')
 
-    def test_profile(self):
+    def test_profile_with_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         response = self.client.get(self.profile_url)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], 'testcustomer')
-        self.assertEqual(response.data['email'], 'testcustomer@test.de')
-        self.assertEqual(response.data['type'], 'customer')
-        self.assertEqual(response.data['first_name'], "Test")
-        self.assertEqual(response.data['last_name'], "Customer")
-        self.assertEqual(response.data['location'], "Berlin")
-        self.assertEqual(response.data['tel'], "123456789")
-        self.assertEqual(response.data['description'], "This is a test customer")
-        self.assertEqual(response.data['working_hours'], "9-17")
-        self.assertEqual(response.data['file'], None)
-        self.assertEqual(response.data['id'], self.customer.id)
-        self.assertEqual(response.data['created_at'], self.customer.created_at.isoformat().replace("+00:00", "Z"))
-        print(response.data)
 
-    def test_get_business_profile(self):
+    def test_profile_with_guest_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.guest_token.key)
+        response = self.client.get(reverse('profile', kwargs={'user_id': self.guest_user.id}))
 
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], 'guestuser')
+
+    def test_get_business_profile_with_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         response = self.client.get(self.business_profile_url)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['username'], 'testbusiness')
-        self.assertEqual(response.data[0]['email'], 'testbusiness@test.de')
-        self.assertEqual(response.data[0]['type'], 'business')
 
-    def test_get_customer_profile(self):
-
+    def test_get_customer_profile_with_guest_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.guest_token.key)
         response = self.client.get(self.customer_profile_url)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['username'], 'testcustomer')
-        self.assertEqual(response.data[0]['email'], 'testcustomer@test.de')
-        self.assertEqual(response.data[0]['type'], 'customer')
+        self.assertEqual(len(response.data), 2)

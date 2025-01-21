@@ -38,9 +38,9 @@ class GuestLoginTestCase(APITestCase):
 
         user = CustomUser.objects.get(username="andrey")
 
-        GuestToken.objects.filter(user=user).update(expires_at=now() - timedelta(hours=1))
+        GuestToken.objects.filter(user=user).update(created=now() - timedelta(hours=2))
 
-        expired_tokens = GuestToken.objects.filter(user=user, expires_at__lt=now())
+        expired_tokens = GuestToken.objects.filter(user=user, created__lt=now() - timedelta(hours=2))
         self.assertTrue(expired_tokens.exists())
 
     def test_guest_login_deletes_expired_tokens(self):
@@ -49,7 +49,7 @@ class GuestLoginTestCase(APITestCase):
 
         user = CustomUser.objects.get(username="andrey")
 
-        GuestToken.objects.filter(user=user).update(expires_at=now() - timedelta(hours=1))
+        GuestToken.objects.filter(user=user).update(created=now() - timedelta(hours=2))
 
         response = self.client.post(self.login_url, self.guest_customer)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

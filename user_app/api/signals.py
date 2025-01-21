@@ -15,8 +15,7 @@ def delete_expired_tokens(sender, instance, **kwargs):
 @receiver(post_save, sender=GuestToken)
 def delete_expired_guest_tokens(sender, instance, **kwargs):
     expiration_time = now() - timedelta(hours=2)
-    expired_tokens = GuestToken.objects.filter(created__lt=expiration_time)
-    deleted_count, _ = expired_tokens.delete()
+    deleted_count, _ = GuestToken.objects.filter(created__lt=expiration_time).delete()
     if deleted_count > 0:
         print(f"Deleted {deleted_count} expired GuestTokens")
 
