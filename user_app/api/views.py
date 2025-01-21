@@ -1,13 +1,15 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegistrationSerializer, LoginSerializer
+from .serializers import RegistrationSerializer, LoginSerializer, ProfileSerializer
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
-from ..models import GuestToken
+from ..models import CustomUser, GuestToken
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
+from .authentication import GuestTokenAuthentication
+from .permissions import IsAuthenticatedOrGuest
 from django.utils.crypto import get_random_string
-from django.utils.timezone import now
-
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -35,11 +37,10 @@ class LoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data['user']
 
+            user.update_activity()
+
             if user.username in ["andrey", "kevin"]:  
-                token = GuestToken.objects.create(
-                    user=user,
-                    key=get_random_string(40) 
-                )
+                token = GuestToken.objects.create(user=user, key=get_random_string(40))
             else:
                 token, _ = Token.objects.get_or_create(user=user)
 
@@ -54,10 +55,31 @@ class LoginView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-# class LogoutView(APIView):
-#     authentication_classes = [TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
+class ProfileView(APIView):
+    authentication_classes = [GuestTokenAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticatedOrGuest]
+    def get(self, request, user_id):
+        try:
+            user = CustomUser.objects.get(pk=user_id)
+            serializer = ProfileSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class BusinessProfilesView(APIView):
+    authentication_classes = [GuestTokenAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticatedOrGuest]
 
-#     def post(self, request):
-#         request.user.auth_token.delete()
-#         return Response({"detail": "Successfully logged out"},status=status.HTTP_200_OK)
+    def get(self, request):
+        business_users = CustomUser.objects.filter(type='business')
+        serializer = ProfileSerializer(business_users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class CustomerProfilesView(APIView):
+    authentication_classes = [GuestTokenAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticatedOrGuest]
+
+    def get(self, request):
+        customer_users = CustomUser.objects.filter(type='customer')
+        serializer = ProfileSerializer(customer_users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

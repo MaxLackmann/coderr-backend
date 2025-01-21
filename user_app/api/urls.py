@@ -1,10 +1,11 @@
 from django.urls import path
-from rest_framework.response import Response
-from .views import RegistrationView, LoginView #LogoutView
+from .views import RegistrationView, LoginView, ProfileView, BusinessProfilesView, CustomerProfilesView
 
 
 urlpatterns = [
     path('registration/', RegistrationView.as_view() , name='registration'),
     path('login/', LoginView.as_view() , name='login'),
-    # path('logout/', LogoutView.as_view() , name='logout'),
+    path('profile/<int:user_id>/', ProfileView.as_view() , name='profile'),
+    path('profiles/business/', BusinessProfilesView.as_view() , name='business_profile'),
+    path('profiles/customer/', CustomerProfilesView.as_view() , name='customer_profile'),
 ]

@@ -2,9 +2,6 @@ from rest_framework import serializers
 from user_app.models import CustomUser
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
-from django.utils.timezone import now
-from ..models import GuestToken
-from django.utils.crypto import get_random_string
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -62,3 +59,8 @@ class LoginSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+    
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'username', 'first_name', 'last_name', 'file', 'location', 'tel', 'description', 'working_hours', 'type', 'email', 'created_at']
