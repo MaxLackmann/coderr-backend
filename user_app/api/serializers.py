@@ -13,7 +13,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs['password'] != attrs['repeated_password']:
-            raise ValidationError({"password": "Passwords do not match."})
+            raise ValidationError({"password": ["Passwörter stimmen nicht überein."]})
 
         return attrs
     
@@ -23,9 +23,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
             return CustomUser.objects.create_user(**validated_data)
         except IntegrityError as e:
             if 'email' in str(e):
-                raise ValidationError({"email": ["e-mail already exists."]})
+                raise ValidationError({"email": ["e-mail existiert bereis."]})
             elif 'username' in str(e):
-                raise ValidationError({"username": ["username already exists."]})
+                raise ValidationError({"username": ["username existiert bereits."]})
             raise
     
 class LoginSerializer(serializers.Serializer):
@@ -52,10 +52,10 @@ class LoginSerializer(serializers.Serializer):
         try:
             user = CustomUser.objects.get(username=username)
         except CustomUser.DoesNotExist:
-            raise serializers.ValidationError({"username": ["Username does not exist."]})
+            raise serializers.ValidationError({"details": ["username or password nicht korrekt"]})
 
         if not user.check_password(password):
-            raise serializers.ValidationError({"password": ["Wrong password."]})
+            raise serializers.ValidationError({"details": ["username or password nicht korrekt"]})
 
         attrs['user'] = user
         return attrs
