@@ -21,23 +21,8 @@ class DetailOffer(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     features = models.JSONField()
     offer_type = models.CharField(max_length=100)
-    
-    def clean(self):
-        """ Validierung für revisions, delivery_time_in_days und price """
-        errors = {}
 
-        if self.revisions < -1:
-            errors["revisions"] = "Revisions müssen mindestens -1 oder höher sein."
-        if self.delivery_time_in_days <= 0:
-            errors["delivery_time_in_days"] = "Delivery Time muss größer als 0 sein."
-        if self.price < 0:
-            errors["price"] = "Price darf nicht negativ sein."
-
-        if errors:
-            raise ValidationError(errors)
-        
     def save(self, *args, **kwargs):
-        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):

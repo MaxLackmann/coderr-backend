@@ -95,6 +95,62 @@ class GetOfferTest(APITestCase):
 
     def test_get_all_offers(self):
         response = self.client.get(self.get_url)
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data["count"], 2)
+
+    def test_pagination(self):
+        response = self.client.get(self.get_url, {"page": 1, "page_size": 1})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 1)
+
+    def test_filter_by_creator_id(self):
+        response = self.client.get(self.get_url, {"creator_id": self.user1.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+
+    def test_filter_by_min_price(self):
+        response = self.client.get(self.get_url, {"min_price": 100})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(all(
+            min(detail["price"] for detail in offer["details"]) >= 100
+            for offer in response.data["results"]
+        ))
+
+    def test_filter_by_max_delivery_time(self):
+        response = self.client.get(self.get_url, {"max_delivery_time": 7})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(all(offer["details"][0]["delivery_time_in_days"] <= 7 for offer in response.data["results"]))
+
+    def test_search_offers(self):
+        response = self.client.get(self.get_url, {"search": "Website"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+
+    def test_sort_by_min_price(self):
+        response = self.client.get(self.get_url, {"ordering": "min_price"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        prices = [offer["details"][0]["price"] for offer in response.data["results"]]
+        self.assertEqual(prices, sorted(prices))
+
+    def test_sort_by_min_price_desc(self):
+        response = self.client.get(self.get_url, {"ordering": "-min_price"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        prices = [offer["details"][0]["price"] for offer in response.data["results"]]
+        self.assertEqual(prices, sorted(prices, reverse=True))
+
+    def test_sort_by_updated_at(self):
+        response = self.client.get(self.get_url, {"ordering": "updated_at"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_at = [offer["updated_at"] for offer in response.data["results"]]
+        self.assertEqual(updated_at, sorted(updated_at))
+
+    def test_sort_by_updated_at_desc(self):
+        response = self.client.get(self.get_url, {"ordering": "-updated_at"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_at = [offer["updated_at"] for offer in response.data["results"]]
+        self.assertEqual(updated_at, sorted(updated_at, reverse=True))
+
+    def test_sort_with_invalid_field(self):
+        response = self.client.get(self.get_url + "?ordering=invalid_field")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ordering", response.data)

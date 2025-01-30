@@ -2,12 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import RegistrationSerializer, LoginSerializer, ProfileSerializer
-from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
-from ..models import CustomUser, GuestToken
 from .authentication import CombinedTokenAuthentication
 from .permissions import IsAuthenticatedOrGuest
-from django.utils.crypto import get_random_string
+from user_app.api.services import UserService
+from user_app.models import CustomUser
 
 class RegistrationView(APIView):
     authentication_classes = []
@@ -16,18 +15,11 @@ class RegistrationView(APIView):
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            token = Token.objects.create(user=user)
-            
-            data = {
-                'token': token.key,
-                'username': user.username,
-                'email': user.email,
-                'user_id': user.id,
-            }
-            return Response(data, status=status.HTTP_201_CREATED)
+            user = UserService.register_user(serializer.validated_data)
+            token = UserService.generate_token(user)
+            return Response({"token": token, "username": user.username, "email": user.email, "user_id": user.id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
 class LoginView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
@@ -36,36 +28,20 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-
             user.update_activity()
-
-            if user.username in ["andrey", "kevin"]:  
-                token = GuestToken.objects.create(user=user, key=get_random_string(40))
-            else:
-                token, _ = Token.objects.get_or_create(user=user)
-
-            data = {
-                "token": token.key,
-                "username": user.username,
-                "email": user.email,
-                "user_id": user.id
-            }
-            print(user.type, token.key)
-            return Response(data, status=status.HTTP_200_OK)
-
+            token = UserService.generate_token(user)
+            return Response({"token": token, "username": user.username, "email": user.email, "user_id": user.id}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
 class ProfileView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
+
     def get(self, request, user_id):
-        try:
-            user = CustomUser.objects.get(pk=user_id)
-            serializer = ProfileSerializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except CustomUser.DoesNotExist:
-            return Response({"detail": ["User nicht gefunden"]}, status=status.HTTP_404_NOT_FOUND)
-        
+        user = UserService.get_profile(user_id)
+        serializer = ProfileSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class BusinessProfilesView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
@@ -74,12 +50,13 @@ class BusinessProfilesView(APIView):
         business_users = CustomUser.objects.filter(type='business')
         serializer = ProfileSerializer(business_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
 class CustomerProfilesView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request):
-        customer_users = CustomUser.objects.filter(type='customer')
+        """Gibt alle Customer-User zurück."""
+        customer_users = UserService.get_filtered_profiles("customer")
         serializer = ProfileSerializer(customer_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
