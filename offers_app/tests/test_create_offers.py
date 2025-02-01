@@ -161,4 +161,4 @@ class CreateOfferTest(APITestCase):
 
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("price",response.data)
+        self.assertIn("detail",response.data)

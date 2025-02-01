@@ -16,13 +16,13 @@ class DetailOfferSerializer(serializers.ModelSerializer):
         return value
 
     def validate_delivery_time(self, value):
-        if value <= 0:
-            raise ValidationError({"detail": "Delivery Time muss größer als 0 sein."})
+        if value < 0:
+            raise ValidationError({"detail": "Lieferzeit muss größer als 0 sein."})
         return value
 
     def validate_price(self, value):
         if value < 0:
-            raise ValidationError({"detail": "Price darf nicht negativ sein."})
+            raise ValidationError({"detail": "Preis darf nicht negativ sein."})
         return value
     
     def validate_features(self, value):

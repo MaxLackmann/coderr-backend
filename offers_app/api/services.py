@@ -10,10 +10,7 @@ class OfferService:
     @staticmethod
     def get_filtered_offers(request):
         offers = Offer.objects.prefetch_related("details").annotate(calculated_min_price=Min("details__price"))
-        filterset = OfferFilter(request.GET, queryset=offers)
-        if not filterset.is_valid():
-            raise ValidationError(filterset.errors)
-        return filterset.qs
+        return offers
 
     @staticmethod
     def search_offers(offers, search_term):
@@ -21,13 +18,14 @@ class OfferService:
 
     @staticmethod
     def sort_offers(offers, ordering):
+        """Sortiert nach bestimmten Kriterien."""
         allowed_fields = ["updated_at", "min_price"]
         if ordering in allowed_fields or ordering.lstrip("-") in allowed_fields:
             if "min_price" in ordering:
                 ordering_field = ordering.replace("min_price", "calculated_min_price")
                 return offers.annotate(calculated_min_price=Min("details__price")).order_by(ordering_field)
             return offers.order_by(ordering)
-        raise ValidationError({"ordering": ["Ungültiges Sortierfeld. Erlaubte Felder: updated_at, min_price"]})
+        raise ValidationError({"detail": ["Ungültiges Sortierfeld. Erlaubte Felder: updated_at, min_price"]})
 
     @staticmethod
     def paginate_offers(request, offers):
@@ -44,8 +42,7 @@ class OfferService:
     @staticmethod
     def retrieve_offer(offer_id):
         try:
-            offer = Offer.objects.get(id=offer_id)
-            return offer, OfferSerializer(offer)
+            return Offer.objects.get(id=offer_id)
         except Offer.DoesNotExist:
             raise NotFound({"detail": ["Das angeforderte Angebot existiert nicht."]})
 
@@ -70,7 +67,6 @@ class OfferService:
     @staticmethod
     def retrieve_detailoffer(detailoffer_id):
         try:
-            detailoffer = DetailOffer.objects.get(id=detailoffer_id)
-            return detailoffer, DetailOfferSerializer(detailoffer)
+            return DetailOffer.objects.get(id=detailoffer_id)
         except DetailOffer.DoesNotExist:
             raise NotFound({"detail": ["Das angeforderte Detail existiert nicht."]})

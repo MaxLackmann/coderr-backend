@@ -56,7 +56,6 @@ class CustomerProfilesView(APIView):
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request):
-        """Gibt alle Customer-User zurück."""
         customer_users = UserService.get_filtered_profiles("customer")
         serializer = ProfileSerializer(customer_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
