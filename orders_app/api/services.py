@@ -1,31 +1,37 @@
 from orders_app.models import Order
 from offers_app.models import DetailOffer
-from orders_app.api.serializers import OrderSerializer
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-
+from django.db.models import Q
 
 class OrderService:
-    @staticmethod
-    def get_detail_offer(offer_detail_id):
-        if not offer_detail_id:
-            raise ValidationError({"detail": "offer_detail_id ist erforderlich"})
-        try:
-            return DetailOffer.objects.get(id=offer_detail_id)
-        except DetailOffer.DoesNotExist:
-            raise NotFound({"detail": "DetailOffer nicht gefunden."})
 
     @staticmethod
-    def generate_order_data(user_id, detail_offer):
-        return {
-            "custom_user": user_id,
-            "business_user": detail_offer.user.id,
-            "detail_offer": detail_offer.id,
-            "title": detail_offer.title,
-            "revisions": detail_offer.revisions,
-            "delivery_time_in_days": detail_offer.delivery_time_in_days,
-            "price": detail_offer.price,
-            "features": detail_offer.features,
-            "offer_type": detail_offer.offer_type,
-        }
+    def get_orders_for_user(user):
+        return Order.objects.filter(
+            Q(customer_user=user) | Q(business_user=user)
+        ).distinct()
+    
+    @staticmethod
+    def create_order(offer_detail_id, customer_user):
+        offer_detail = DetailOffer.objects.get(id=offer_detail_id)
+
+        order = Order.objects.create(
+            customer_user=customer_user,
+            business_user=offer_detail.offer.user,
+            title=offer_detail.title, 
+            revisions=offer_detail.revisions,
+            delivery_time_in_days=offer_detail.delivery_time_in_days,
+            price=offer_detail.price,
+            features=offer_detail.features,
+            offer_type=offer_detail.offer_type,
+            status="in_progress",
+        )
+
+        return order
+    
+    @staticmethod
+    def retrieve_order(order_id):
+        return Order.objects.get(id=order_id)
+
+    @staticmethod
+    def count_orders_for_business(business_user_id, status):
+        return Order.objects.filter(business_user_id=business_user_id, status=status).count()

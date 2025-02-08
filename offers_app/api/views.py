@@ -7,11 +7,12 @@ from user_app.api.authentication import CombinedTokenAuthentication
 from user_app.api.permissions import IsAuthenticatedOrGuest
 from offers_app.api.services import OfferService
 from offers_app.api.pagination import CustomPageNumberPagination
-from offers_app.models import Offer
-from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from offers_app.models import Offer, DetailOffer
+from rest_framework.exceptions import PermissionDenied
+from offers_app.api.permissions import IsBusinessUser
 
 class OffersView(APIView):
-    permission_classes = [IsAuthenticatedOrGuest]
+    permission_classes = [IsAuthenticatedOrGuest, IsBusinessUser]
     authentication_classes = [CombinedTokenAuthentication]
     pagination_class = CustomPageNumberPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -33,14 +34,15 @@ class OffersView(APIView):
     def post(self, request):
         try:
             serializer = OfferSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+            if not serializer.is_valid():
+                return Response({"detail": ["Ungültige Daten. Bitte überprüfe deine Eingabe."]}, status=status.HTTP_400_BAD_REQUEST)
+            
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except ValidationError as e:
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
 
-        
-    
+        except PermissionDenied:
+            return Response({"detail": ["Nur Geschäftsnutzer dürfen Angebote erstellen."]}, status=status.HTTP_403_FORBIDDEN)
+
 class OfferDetailView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
@@ -50,40 +52,36 @@ class OfferDetailView(APIView):
             offer = OfferService.retrieve_offer(offer_id)
             serializer = OfferSerializer(offer)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except NotFound as e:
-            return Response(e.detail, status=status.HTTP_404_NOT_FOUND) 
-        except ValidationError as e:
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST) 
+        except Offer.DoesNotExist:
+            return Response({"detail": ["Das angeforderte Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND) 
 
     def patch(self, request, offer_id):
         try:
             offer = OfferService.retrieve_offer(offer_id)
-            if offer.user != request.user:
-                raise PermissionDenied({"detail": ["Du kannst nur deine eigenen Angebote ändern."]})
+            OfferService.check_offer_user(offer, request.user)
 
             serializer = OfferSerializer(offer, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            if not serializer.is_valid():
+                return Response({"detail": ["Ungültige Daten. Bitte überprüfe deine Eingabe."]}, status=status.HTTP_400_BAD_REQUEST)
 
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except NotFound as e:
-            return Response(e.detail, status=status.HTTP_404_NOT_FOUND) 
-        except PermissionDenied as e:
-            return Response(e.detail, status=status.HTTP_403_FORBIDDEN) 
-        except ValidationError as e:
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)  
+
+        except Offer.DoesNotExist:
+            return Response({"detail": ["Das angeforderte Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND)
+        except PermissionDenied:
+            return Response({"detail": ["Nicht Autorisiert zu bearbeiten."]}, status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, offer_id):
         try:
             offer = OfferService.retrieve_offer(offer_id)
-            if offer.user != request.user:
-                raise PermissionDenied({"detail": ["Du kannst nur deine eigenen Angebote löschen."]})
+            OfferService.check_offer_user(offer, request.user)
             offer.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        except NotFound as e:
-            return Response(e.detail, status=status.HTTP_404_NOT_FOUND) 
-        except PermissionDenied as e:
-            return Response(e.detail, status=status.HTTP_403_FORBIDDEN)  
+        except Offer.DoesNotExist:
+            return Response({"detail": ["Das angeforderte Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND)
+        except PermissionDenied:
+            return Response({"detail": ["Nicht Autorisiert zu loeschen."]}, status=status.HTTP_403_FORBIDDEN)
 
 class DetailOfferView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
@@ -94,5 +92,5 @@ class DetailOfferView(APIView):
             detailoffer = OfferService.retrieve_detailoffer(detailoffer_id)
             serializer = DetailOfferSerializer(detailoffer)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except NotFound as e:
-            return Response(e.detail, status=status.HTTP_404_NOT_FOUND)
+        except DetailOffer.DoesNotExist:
+            return Response({"detail": ["Das angeforderte Detail existiert nicht."]}, status=status.HTTP_404_NOT_FOUND)

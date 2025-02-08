@@ -11,14 +11,7 @@ class UserService:
     @staticmethod
     def register_user(validated_data):
         validated_data.pop('repeated_password', None)
-        try:
-            return CustomUser.objects.create_user(**validated_data)
-        except IntegrityError as e:
-            if 'email' in str(e):
-                raise ValidationError({"email": ["E-Mail existiert bereits."]})
-            elif 'username' in str(e):
-                raise ValidationError({"username": ["Username existiert bereits."]})
-            raise
+        return CustomUser.objects.create_user(**validated_data)
 
     @staticmethod
     def authenticate_user(username, password):
@@ -34,10 +27,7 @@ class UserService:
             )
             return user
 
-        user = authenticate(username=username, password=password)
-        if not user:
-            raise ValidationError({"details": ["Username oder Passwort nicht korrekt."]})
-        return user
+        return authenticate(username=username, password=password)
 
     @staticmethod
     def generate_token(user):
@@ -47,14 +37,10 @@ class UserService:
             token, _ = Token.objects.get_or_create(user=user)
         return token.key
 
+    @staticmethod
     def get_filtered_profiles(user_type):
-        if user_type not in ["business", "customer"]:
-            raise ValidationError({"detail": "Ungültiger User-Typ"})
         return CustomUser.objects.filter(type=user_type)
 
     @staticmethod
     def get_profile(user_id):
-        try:
-            return CustomUser.objects.get(pk=user_id)
-        except CustomUser.DoesNotExist:
-            raise ValidationError({"detail": ["User nicht gefunden."]})
+        return CustomUser.objects.get(pk=user_id)

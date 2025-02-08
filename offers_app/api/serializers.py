@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from offers_app.models import Offer, DetailOffer
-from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
-from django.core.exceptions import ValidationError as DjangoValidationError
 
 class DetailOfferSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=10, decimal_places=2, coerce_to_string=False)
