@@ -18,13 +18,16 @@ class OfferService:
 
     @staticmethod
     def sort_offers(offers, ordering):
-        allowed_fields = ["updated_at", "min_price"]
-        if ordering in allowed_fields or ordering.lstrip("-") in allowed_fields:
+        allowed_fields = ["updated_at", "-updated_at", "min_price", "-min_price"]
+    
+        if ordering in allowed_fields:
             if "min_price" in ordering:
                 ordering_field = ordering.replace("min_price", "calculated_min_price")
                 return offers.annotate(calculated_min_price=Min("details__price")).order_by(ordering_field)
             return offers.order_by(ordering)
+    
         return offers
+
     
     @staticmethod
     def check_offer_user(offer, user):

@@ -10,22 +10,22 @@ class DetailOfferSerializer(serializers.ModelSerializer):
 
     def validate_revisions(self, value):
         if value < -1:
-            raise ValidationError({"detail": "Revisions müssen mindestens -1 oder höher sein."})
+            raise ValidationError({"detail": ["Revisions müssen mindestens -1 oder höher sein."]})
         return value
 
     def validate_delivery_time(self, value):
         if value < 0:
-            raise ValidationError({"detail": "Lieferzeit muss größer als 0 sein."})
+            raise ValidationError({"detail": ["Lieferzeit muss größer als 0 sein."]})
         return value
 
     def validate_price(self, value):
         if value < 0:
-            raise ValidationError({"detail": "Preis darf nicht negativ sein."})
+            raise ValidationError({"detail": ["Preis darf nicht negativ sein."]})
         return value
     
     def validate_features(self, value):
         if len(value) == 0:
-            raise ValidationError({"detail": "mindestens 1 Feature erforderlich."})
+            raise ValidationError({"detail": ["mindestens 1 Feature erforderlich."]})
         return value
     
     def update(self, instance, validated_data):
