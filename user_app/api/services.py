@@ -42,5 +42,5 @@ class UserService:
         return CustomUser.objects.filter(type=user_type)
 
     @staticmethod
-    def get_profile(user_id):
-        return CustomUser.objects.get(pk=user_id)
+    def get_profile(pk):
+        return CustomUser.objects.get(pk=pk)

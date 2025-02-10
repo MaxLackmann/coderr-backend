@@ -5,6 +5,7 @@ from user_app.models import GuestToken
 from django.utils.timezone import now
 
 class CombinedTokenAuthentication(TokenAuthentication):
+    keyword = "Token"
 
     def authenticate(self, request):
         token_key = self.get_token_from_request(request)
@@ -18,6 +19,10 @@ class CombinedTokenAuthentication(TokenAuthentication):
         auth = super().authenticate(request)
         if auth is not None:
             return auth
+        
+        token = request.headers.get("auth-token")
+        if not token:
+            return None
 
         raise AuthenticationFailed({"token": "Invalid or expired token"})
 

@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegistrationSerializer, LoginSerializer, ProfileSerializer
+from .serializers import RegistrationSerializer, LoginSerializer, ProfileSerializer, BusinessProfileSerializer, CustomerProfileSerializer
 from rest_framework.permissions import AllowAny
 from .authentication import CombinedTokenAuthentication
 from .permissions import IsAuthenticatedOrGuest
@@ -55,9 +55,9 @@ class ProfileView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
 
-    def get(self, request, user_id):
+    def get(self, request, pk):
         try:
-            user = UserService.get_profile(user_id)
+            user = UserService.get_profile(pk)
             serializer = ProfileSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
@@ -69,14 +69,14 @@ class BusinessProfilesView(APIView):
 
     def get(self, request):
         business_users = CustomUser.objects.filter(type='business')
-        serializer = ProfileSerializer(business_users, many=True)
+        serializer = BusinessProfileSerializer(business_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
 class CustomerProfilesView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request):
-        customer_users = UserService.get_filtered_profiles("customer")
-        serializer = ProfileSerializer(customer_users, many=True)
+        customer_users = CustomUser.objects.filter(type='customer')
+        serializer = CustomerProfileSerializer(customer_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

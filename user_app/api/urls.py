@@ -5,7 +5,7 @@ from .views import RegistrationView, LoginView, ProfileView, BusinessProfilesVie
 urlpatterns = [
     path('registration/', RegistrationView.as_view() , name='registration'),
     path('login/', LoginView.as_view() , name='login'),
-    path('profile/<int:user_id>/', ProfileView.as_view() , name='profile'),
+    path('profile/<int:pk>/', ProfileView.as_view() , name='profile'),
     path('profiles/business/', BusinessProfilesView.as_view() , name='business_profile'),
     path('profiles/customer/', CustomerProfilesView.as_view() , name='customer_profile'),
 ]

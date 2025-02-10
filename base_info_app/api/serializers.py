@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from base_info_app.models import BaseInfo
 
-class BaseInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BaseInfo
-        fields = ['review_count', 'average_rating', 'business_profile_count', 'offer_count']
+class BaseInfoSerializer(serializers.Serializer):
+    review_count = serializers.IntegerField()
+    average_rating = serializers.DecimalField(max_digits=5, decimal_places=1)
+    business_profile_count = serializers.IntegerField()
+    offer_count = serializers.IntegerField()

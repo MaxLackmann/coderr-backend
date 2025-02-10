@@ -64,3 +64,33 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'first_name', 'last_name', 'file', 'location', 'tel', 'description', 'working_hours', 'type', 'email', 'created_at']
+
+class BusinessProfileSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
+        fields = ['user', 'file', 'location', 'tel', 'description', 'working_hours', 'type']
+
+    def get_user(self, obj):
+        return {
+            "pk": obj.id,
+            "username": obj.username,
+            "first_name": obj.first_name or "",
+            "last_name": obj.last_name or ""
+        }
+    
+class CustomerProfileSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
+        fields = ['user', 'file', 'type']
+
+    def get_user(self, obj):
+        return {
+            "pk": obj.id,
+            "username": obj.username,
+            "first_name": obj.first_name or "",
+            "last_name": obj.last_name or ""
+        }
