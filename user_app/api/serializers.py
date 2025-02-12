@@ -11,16 +11,60 @@ class RegistrationSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'password', 'repeated_password', 'type']
 
     def validate(self, attrs):
+        """
+        Validates the input attributes for registration.
+    
+        Ensures that the password and repeated_password fields match.
+    
+        Args:
+            attrs (dict): A dictionary of attributes to validate.
+    
+        Returns:
+            dict: The validated attributes.
+    
+        Raises:
+            serializers.ValidationError: If the passwords do not match.
+        """
+
         if attrs['password'] != attrs['repeated_password']:
             raise serializers.ValidationError({"detail": ["Passwörter stimmen nicht überein."]})
         return attrs
     
     def validate_email(self, email):
+        """
+        Validates the email field.
+    
+        Ensures that the email is unique.
+    
+        Args:
+            email (str): The email to validate.
+    
+        Returns:
+            str: The validated email.
+    
+        Raises:
+            serializers.ValidationError: If the email is not unique.
+        """
         if CustomUser.objects.filter(email=email).exists():
             raise serializers.ValidationError({"detail": ["Überprüfe deine Angaben."]})
         return email
     
     def validate_username(self, username):
+        """
+        Validates the username field.
+
+        Ensures that the username is unique.
+
+        Args:
+            username (str): The username to validate.
+
+        Returns:
+            str: The validated username.
+
+        Raises:
+            serializers.ValidationError: If the username is not unique.
+        """
+
         if CustomUser.objects.filter(username=username).exists():
             raise serializers.ValidationError({"detail": ["Überprüfe deine Angaben."]})
         return username
@@ -30,6 +74,22 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, required=True)
 
     def validate(self, attrs):
+        """
+        Validates the username and password.
+    
+        Checks if the username is in the list of guest users. If it is, creates the user if it does not exist.
+        If the user is not in the list of guest users, checks if the username and password match a user in the database.
+    
+        Args:
+            attrs (dict): The validated data.
+    
+        Returns:
+            dict: The validated data with the user added to it.
+    
+        Raises:
+            serializers.ValidationError: If the username or password is invalid.
+        """
+
         username = attrs.get('username')
         password = attrs.get('password')
 
@@ -65,11 +125,34 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = ['user', 'username', 'first_name', 'last_name', 'file', 'location', 'tel', 'description', 'working_hours', 'type', 'email', 'created_at']
 
     def validate_email(self, email):
+        """
+        Validate the 'email' field to ensure it is unique among all users.
+
+        Args:
+            email (str): The email address to validate.
+
+        Raises:
+            serializers.ValidationError: If the email address is already taken.
+        """
+
         if CustomUser.objects.filter(email=email).exclude(id=self.instance.id).exists():
             raise serializers.ValidationError({"detail": ["Diese E-Mail ist bereits vergeben."]})
         return email
 
     def validate_tel(self, tel):
+        """
+        Validate the 'tel' field to ensure it only contains digits and is unique among all users.
+
+        Args:
+            tel (str): The phone number to validate.
+
+        Returns:
+            str: The validated phone number.
+
+        Raises:
+            serializers.ValidationError: If the phone number contains non-digit characters or is already in use.
+        """
+
         if tel and not tel.isdigit():
             raise serializers.ValidationError({"detail": ["Telefonnummer darf nur Zahlen enthalten."]})
 
@@ -86,6 +169,16 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
         fields = ['user', 'file', 'location', 'tel', 'description', 'working_hours', 'type']
 
     def get_user(self, obj):
+        """
+        Returns a dictionary containing the id, username, first name and last name of the user.
+
+        Args:
+            obj (CustomUser): The user instance.
+
+        Returns:
+            dict: A dictionary containing the id, username, first name and last name of the user.
+        """
+
         return {
             "pk": obj.id,
             "username": obj.username,
@@ -101,6 +194,16 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         fields = ['user', 'file', 'type']
 
     def get_user(self, obj):
+        """
+        Returns a dictionary containing the id, username, first name and last name of the user.
+
+        Args:
+            obj (CustomUser): The user instance.
+
+        Returns:
+            dict: A dictionary containing the id, username, first name and last name of the user.
+        """
+        
         return {
             "pk": obj.id,
             "username": obj.username,

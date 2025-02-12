@@ -21,6 +21,19 @@ class OffersView(APIView):
     search_fields = ['title', 'description']
 
     def get(self, request):
+        """
+        Retrieve a list of offers filtered by query parameters.
+
+        Query parameters can be:
+            - creator_id: the ID of the user who created the offer
+            - min_price: the minimum price of the offer
+            - max_delivery_time: the maximum delivery time of the offer
+            - search: a search term to search for in the offer title and description
+            - ordering: the field to order the offers by (min_price or updated_at)
+
+        Returns a paginated list of offers.
+        """
+        
         offers = OfferService.get_filtered_offers(request)
         offers = OfferService.search_offers(offers, request.query_params.get('search'))
         offers = OfferService.sort_offers(offers, request.query_params.get('ordering', 'min_price'))
@@ -32,6 +45,23 @@ class OffersView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
+        """
+        Creates a new offer.
+
+        The request body must contain the following fields:
+
+        - title: the title of the offer
+        - description: the description of the offer
+        - min_price: the minimum price of the offer
+        - max_delivery_time: the maximum delivery time of the offer
+
+        Returns a JSON representation of the created offer if the request is valid.
+
+        Raises a 400 Bad Request error if the request body is invalid.
+
+        Raises a 403 Forbidden error if the user is not a business user.
+        """
+
         try:
             serializer = OfferSerializer(data=request.data)
             if not serializer.is_valid():
@@ -48,14 +78,36 @@ class OfferDetailView(APIView):
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request, offer_id):
+        """
+        Retrieve an offer by its ID.
+
+        :param request: The request object.
+        :param offer_id: The ID of the offer to retrieve.
+        :return: A JSON representation of the retrieved offer if it exists.
+        :raises: 404 Not Found if the offer does not exist.
+        """
+
         try:
             offer = OfferService.retrieve_offer(offer_id)
             serializer = OfferSerializer(offer)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Offer.DoesNotExist:
-            return Response({"detail": ["Das angeforderte Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND) 
+            return Response({"detail": ["Das Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND)
+
 
     def patch(self, request, offer_id):
+        """
+        Updates an existing offer by its ID.
+
+        The request body must contain the fields that should be updated.
+
+        Returns a JSON representation of the updated offer if the request is valid.
+
+        Raises a 400 Bad Request error if the request body is invalid.
+
+        Raises a 403 Forbidden error if the user is not the owner of the offer.
+        """
+
         try:
             offer = OfferService.retrieve_offer(offer_id)
             OfferService.check_offer_user(offer, request.user)
@@ -73,6 +125,14 @@ class OfferDetailView(APIView):
             return Response({"detail": ["Nicht Autorisiert zu bearbeiten."]}, status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, offer_id):
+        """
+        Deletes an offer by its ID.
+
+        Raises a 404 Not Found error if the offer does not exist.
+
+        Raises a 403 Forbidden error if the user is not the owner of the offer.
+        """
+        
         try:
             offer = OfferService.retrieve_offer(offer_id)
             OfferService.check_offer_user(offer, request.user)
@@ -88,6 +148,14 @@ class DetailOfferView(APIView):
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request, detailoffer_id):
+        """
+        Retrieves a detail offer by its ID.
+
+        :param detailoffer_id: The ID of the detail offer to retrieve.
+        :return: A JSON representation of the retrieved detail offer if it exists.
+        :raises: 404 Not Found if the detail offer does not exist.
+        """
+        
         try:
             detailoffer = OfferService.retrieve_detailoffer(detailoffer_id)
             serializer = DetailOfferSerializer(detailoffer)

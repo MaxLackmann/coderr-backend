@@ -7,6 +7,13 @@ class CustomPageNumberPagination(PageNumberPagination):
     max_page_size = 100
 
     def get_paginated_response(self, data):
+        """
+        Returns a response object with paginated data.
+
+        :param data: A serializer instance containing the paginated data
+        :return: A Response object with paginated data
+        """
+        
         return Response({
             'count': self.page.paginator.count,
             'next': self.get_next_link(),

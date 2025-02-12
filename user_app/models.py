@@ -21,13 +21,33 @@ class CustomUser(AbstractUser):
     last_activity = models.DateTimeField(default=now)
 
     def update_activity(self):
+        """
+        Updates the last activity of the user to the current time and saves the changes.
+
+        This method is used to track the last time the user was active on the system.
+        """
+
         self.last_activity = now()
         self.save(update_fields=['last_activity'])
 
     def is_inactive(self):
+        """
+        Returns True if the user has been inactive for more than 1 hour, False otherwise.
+
+        Returns:
+            bool: Whether the user has been inactive for more than 1 hour.
+        """
+        
         return now() > self.last_activity + timedelta(hours=1)
 
     def __str__(self):
+        """
+        Returns a string representation of the user, which includes the username and type of the user.
+        
+        Returns:
+            str: A string representation of the user.
+        """
+
         return f"{self.username} ({self.type})"
     
 class GuestToken(models.Model):
@@ -36,4 +56,13 @@ class GuestToken(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def is_expired(self):
+        """
+        Checks if the token has expired.
+
+        A token is considered expired if it was created more than 2 hours ago.
+
+        Returns:
+            bool: Whether the token has expired.
+        """
+
         return now() > self.created + timedelta(hours=2)

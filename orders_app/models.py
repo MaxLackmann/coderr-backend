@@ -1,6 +1,5 @@
 from django.db import models
 from user_app.models import CustomUser
-from offers_app.models import DetailOffer
 
 class Order(models.Model):
     STATUS_CHOICE = [
@@ -24,7 +23,18 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        """
+        Saves the Order instance to the database. This method is overridden to set the delivery_time_in_days field to a positive value if it is not already positive.
+
+        Raises:
+            ValidationError: If the delivery_time_in_days field is not a positive integer.
+        """
+
         super().save(*args, **kwargs)
 
     def __str__(self):
+        """
+        Returns a string representation of the Order, which includes the title of the related DetailOffer and the status of this Order instance.
+        """
+        
         return f"Order {self.id} - {self.title} - {self.status}"

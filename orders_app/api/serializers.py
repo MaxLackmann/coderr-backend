@@ -21,6 +21,18 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'customer_user', 'business_user', 'created_at']   
 
     def update(self, instance, validated_data):
+        """
+        Updates and saves an instance of the Order model.
+
+        The request body must contain the fields that should be updated.
+
+        Returns a JSON representation of the updated order if the request is valid.
+
+        Raises a 400 Bad Request error if the request body is invalid.
+
+        Raises a 403 Forbidden error if the user is not the owner of the order.
+        """
+
         if 'status' in validated_data:
             instance.status = validated_data.pop('status')
         for attr, value in validated_data.items():

@@ -13,6 +13,18 @@ class RegistrationView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """
+        Handles the POST request to the registration endpoint.
+
+        Creates a new user account and generates a token for the user.
+
+        Args:
+            request (Request): The request object containing the registration data.
+
+        Returns:
+            Response: A response object containing the new user's data and a token.
+        """
+        
         serializer = RegistrationSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -34,6 +46,18 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """
+        Handles the POST request to the login endpoint.
+
+        Authenticates the user using the provided data and returns a token if successful.
+
+        Args:
+            request (Request): The request object containing the login data.
+
+        Returns:
+            Response: A response object containing the user's data and a token if the login is successful.
+        """
+
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"detail": ["Ungültige Eingabe. Bitte überprüfe deine Daten."]}, status=status.HTTP_400_BAD_REQUEST)
@@ -63,6 +87,17 @@ class ProfileView(APIView):
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request, pk):
+        """
+        Retrieves a user profile by its primary key.
+
+        Args:
+            request (Request): The request object.
+            pk (int): The primary key of the user to retrieve.
+
+        Returns:
+            Response: A response object containing the user's data if the retrieval is successful.
+        """
+
         try:
             user = UserService.get_profile(pk)
             serializer = ProfileSerializer(user)
@@ -71,6 +106,22 @@ class ProfileView(APIView):
             return Response({"detail": ["Benutzer wurde nicht gefunden."]}, status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, pk):
+        """
+        Partially updates a user profile by its primary key.
+    
+        Args:
+            request (Request): The request object containing the update data.
+            pk (int): The primary key of the user to update.
+    
+        Returns:
+            Response: A response object containing the updated user's data if the update is successful.
+    
+        Raises:
+            403 Forbidden: If the requesting user is not authorized to update the profile.
+            404 Not Found: If the user does not exist.
+            400 Bad Request: If the request data is invalid.
+        """
+
         try:
             user = UserService.get_profile(pk)
 
@@ -92,6 +143,13 @@ class BusinessProfilesView(APIView):
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request):
+        """
+        Retrieves a list of business users.
+
+        Returns:
+            Response: A response object containing a list of business users' data if the retrieval is successful.
+        """
+
         business_users = CustomUser.objects.filter(type='business')
         serializer = BusinessProfileSerializer(business_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -101,6 +159,13 @@ class CustomerProfilesView(APIView):
     permission_classes = [IsAuthenticatedOrGuest]
 
     def get(self, request):
+        """
+        Retrieves a list of customer users.
+
+        Returns:
+            Response: A response object containing a list of customer users' data if the retrieval is successful.
+        """
+
         customer_users = CustomUser.objects.filter(type='customer')
         serializer = CustomerProfileSerializer(customer_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,11 +1,22 @@
 from reviews_app.models import Review
-from user_app.models import CustomUser
-from rest_framework.exceptions import PermissionDenied
 
 
 class ReviewService:
     @staticmethod
     def get_filtered_reviews(request):
+        """
+        Filter reviews based on the given request query parameters.
+
+        Query parameters can be:
+            - business_user_id: the ID of the business user who received the review
+            - reviewer_id: the ID of the user who wrote the review
+
+        Returns a queryset of reviews filtered by the given parameters.
+
+        :param request: The request object to get query parameters from
+        :return: A filtered queryset of reviews
+        """
+
         reviews = Review.objects.all()
 
         business_user_id = request.query_params.get('business_user_id')
@@ -24,6 +35,24 @@ class ReviewService:
     
     @staticmethod
     def sort_reviews(reviews, ordering):
+        """
+        Sorts the given queryset of reviews according to the specified ordering string.
+    
+        Args:
+            reviews (QuerySet[Review]): The queryset of reviews to sort.
+            ordering (str): The field to order by. Must be one of the following:
+                * "updated_at"
+                * "-updated_at"
+                * "rating"
+                * "-rating"
+    
+        Returns:
+            QuerySet[Review]: The sorted queryset of reviews.
+    
+        Raises:
+            ValueError: If the given ordering field is not allowed.
+        """
+
         allowed_fields = ["updated_at", "-updated_at", "rating", "-rating"]
         if ordering in allowed_fields:
             return reviews.order_by(ordering)
@@ -32,4 +61,14 @@ class ReviewService:
     
     @staticmethod
     def retrieve_review(review_id):
+        """
+        Retrieves a review by its ID.
+
+        :param review_id: The ID of the review to retrieve.
+        :type review_id: int
+        :return: The retrieved review.
+        :rtype: Review
+        :raises: Review.DoesNotExist if no review with the given ID exists.
+        """
+
         return Review.objects.get(id=review_id)

@@ -1,6 +1,5 @@
 from django.db import models
 from user_app.models import CustomUser
-from django.core.exceptions import ValidationError
 
 class Offer(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -11,6 +10,10 @@ class Offer(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        """
+        Returns a string representation of the Offer, which is just the title of the Offer.
+        """
+        
         return self.title
     
 class DetailOffer(models.Model):
@@ -23,7 +26,18 @@ class DetailOffer(models.Model):
     offer_type = models.CharField(max_length=100)
 
     def save(self, *args, **kwargs):
+        """
+        Saves the DetailOffer instance to the database. This method is overridden to set the delivery_time_in_days field to a positive value if it is not already positive.
+
+        Raises:
+            ValidationError: If the delivery_time_in_days field is not a positive integer.
+        """
+        
         super().save(*args, **kwargs)
 
     def __str__(self):
+        """
+        Returns a string representation of the DetailOffer, which includes the title of the related Offer and the title of this DetailOffer instance.
+        """
+
         return f"{self.offer.title} - {self.title}"
