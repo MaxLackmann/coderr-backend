@@ -9,18 +9,18 @@ class DetailOfferSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type']
 
     def validate_revisions(self, value):
-        if value < -1:
+        if value < -1 or value == 0:
             raise ValidationError({"detail": ["Revisions müssen mindestens -1 oder höher sein."]})
         return value
 
-    def validate_delivery_time(self, value):
-        if value < 0:
+    def validate_delivery_time_in_days(self, value):
+        if value <= 0:
             raise ValidationError({"detail": ["Lieferzeit muss größer als 0 sein."]})
         return value
 
     def validate_price(self, value):
-        if value < 0:
-            raise ValidationError({"detail": ["Preis darf nicht negativ sein."]})
+        if value <= 0:
+            raise ValidationError({"detail": ["Preis darf nicht 0€ oder kleiner sein"]})
         return value
     
     def validate_features(self, value):
@@ -41,11 +41,6 @@ class OfferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Offer
         fields = ['id', 'user', 'title', 'image', 'description', 'created_at', 'updated_at' ,'details']
-
-    def validate_image(self, value):
-        if value is not None:
-            raise ValidationError({"detail": ["'image' darf nicht vorhanden sein."]})
-        return value
 
     def validate_details(self, value):
         if len(value) != 3:

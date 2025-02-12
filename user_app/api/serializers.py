@@ -1,11 +1,10 @@
 from rest_framework import serializers
 from user_app.models import CustomUser
-from django.db import IntegrityError
-from rest_framework.exceptions import ValidationError
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    repeated_password  = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=8)
+    repeated_password = serializers.CharField(write_only=True)
+    type = serializers.ChoiceField(choices=[('business', 'Business'), ('customer', 'Customer')])
 
     class Meta:
         model = CustomUser
@@ -13,21 +12,19 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs['password'] != attrs['repeated_password']:
-            raise ValidationError({"password": ["Passwörter stimmen nicht überein."]})
-
+            raise serializers.ValidationError({"detail": ["Passwörter stimmen nicht überein."]})
         return attrs
     
-    def create(self, validated_data):
-        validated_data.pop('repeated_password', None)
-        try:
-            return CustomUser.objects.create_user(**validated_data)
-        except IntegrityError as e:
-            if 'email' in str(e):
-                raise ValidationError({"email": ["e-mail existiert bereis."]})
-            elif 'username' in str(e):
-                raise ValidationError({"username": ["username existiert bereits."]})
-            raise
+    def validate_email(self, email):
+        if CustomUser.objects.filter(email=email).exists():
+            raise serializers.ValidationError({"detail": ["Überprüfe deine Angaben."]})
+        return email
     
+    def validate_username(self, username):
+        if CustomUser.objects.filter(username=username).exists():
+            raise serializers.ValidationError({"detail": ["Überprüfe deine Angaben."]})
+        return username
+
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True, required=True)
@@ -52,18 +49,34 @@ class LoginSerializer(serializers.Serializer):
         try:
             user = CustomUser.objects.get(username=username)
         except CustomUser.DoesNotExist:
-            raise serializers.ValidationError({"details": ["username or password nicht korrekt"]})
+            raise serializers.ValidationError({"detail": ["username oder password nicht korrekt"]})
 
         if not user.check_password(password):
-            raise serializers.ValidationError({"details": ["username or password nicht korrekt"]})
+            raise serializers.ValidationError({"detail": ["username oder password nicht korrekt"]})
 
         attrs['user'] = user
         return attrs
     
 class ProfileSerializer(serializers.ModelSerializer):
+    user = serializers.IntegerField(source='id', read_only=True)
+
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'first_name', 'last_name', 'file', 'location', 'tel', 'description', 'working_hours', 'type', 'email', 'created_at']
+        fields = ['user', 'username', 'first_name', 'last_name', 'file', 'location', 'tel', 'description', 'working_hours', 'type', 'email', 'created_at']
+
+    def validate_email(self, email):
+        if CustomUser.objects.filter(email=email).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError({"detail": ["Diese E-Mail ist bereits vergeben."]})
+        return email
+
+    def validate_tel(self, tel):
+        if tel and not tel.isdigit():
+            raise serializers.ValidationError({"detail": ["Telefonnummer darf nur Zahlen enthalten."]})
+
+        if CustomUser.objects.filter(tel=tel).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError({"detail": ["Diese Telefonnummer ist bereits vergeben."]})
+
+        return tel
 
 class BusinessProfileSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()

@@ -7,7 +7,6 @@ from .authentication import CombinedTokenAuthentication
 from .permissions import IsAuthenticatedOrGuest
 from user_app.api.services import UserService
 from user_app.models import CustomUser
-from django.db import IntegrityError
 
 class RegistrationView(APIView):
     authentication_classes = []
@@ -16,19 +15,19 @@ class RegistrationView(APIView):
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"detail": ["Ungültige Daten. Bitte überprüfe deine Eingabe."]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            user = UserService.register_user(serializer.validated_data)
-            token = UserService.generate_token(user)
-            return Response({"token": token, "username": user.username, "email": user.email, "user_id": user.id}, status=status.HTTP_201_CREATED)
-        
-        except IntegrityError as e:
-            if 'email' in str(e):
-                return Response({"detail": ["E-Mail existiert bereits."]}, status=status.HTTP_400_BAD_REQUEST)
-            elif 'username' in str(e):
-                return Response({"detail": ["Username existiert bereits."]}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"detail": ["Registrierung fehlgeschlagen."]}, status=status.HTTP_400_BAD_REQUEST)
+        user = UserService.register_user(serializer.validated_data)
+        token = UserService.generate_token(user)
+        return Response(
+            {
+                "token": token,
+                "username": user.username,
+                "email": user.email,
+                "user_id": user.id
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 class LoginView(APIView):
     authentication_classes = []
@@ -49,7 +48,15 @@ class LoginView(APIView):
 
         user.update_activity()
         token = UserService.generate_token(user)
-        return Response({"token": token, "username": user.username, "email": user.email, "user_id": user.id}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "token": token,
+                "username": user.username,
+                "email": user.email,
+                "user_id": user.id
+            },
+            status=status.HTTP_200_OK
+        )
 
 class ProfileView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
@@ -60,6 +67,23 @@ class ProfileView(APIView):
             user = UserService.get_profile(pk)
             serializer = ProfileSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": ["Benutzer wurde nicht gefunden."]}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, pk):
+        try:
+            user = UserService.get_profile(pk)
+
+            if request.user != user and not request.user.is_staff:
+                return Response({"detail": ["Nicht autorisiert."]}, status=status.HTTP_403_FORBIDDEN)
+
+            serializer = ProfileSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         except CustomUser.DoesNotExist:
             return Response({"detail": ["Benutzer wurde nicht gefunden."]}, status=status.HTTP_404_NOT_FOUND)
 

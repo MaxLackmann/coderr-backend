@@ -16,9 +16,9 @@ class Offer(models.Model):
 class DetailOffer(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='details')
     title = models.CharField(max_length=100)
-    revisions = models.IntegerField()
+    revisions = models.IntegerField(default=0)
     delivery_time_in_days = models.IntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     features = models.JSONField()
     offer_type = models.CharField(max_length=100)
 

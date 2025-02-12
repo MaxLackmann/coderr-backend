@@ -35,7 +35,7 @@ class OffersView(APIView):
         try:
             serializer = OfferSerializer(data=request.data)
             if not serializer.is_valid():
-                return Response({"detail": ["Ungültige Daten. Bitte überprüfe deine Eingabe."]}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)

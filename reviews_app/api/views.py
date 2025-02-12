@@ -22,6 +22,9 @@ class ReviewView(APIView):
     def get(self, request):
 
         reviews = ReviewService.get_filtered_reviews(request)
+        if reviews == []:
+            return Response({'detail': ["Keine Bewertungen vorhanden"]}, status=status.HTTP_200_OK)
+        
         reviews = ReviewService.sort_reviews(reviews, request.query_params.get('ordering', 'updated_at'))
 
         serializer = ReviewSerializer(reviews, many=True)

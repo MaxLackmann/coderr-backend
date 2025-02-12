@@ -11,11 +11,14 @@ class ReviewService:
         business_user_id = request.query_params.get('business_user_id')
         reviewer_id = request.query_params.get('reviewer_id')
 
-        if business_user_id:
-            reviews = reviews.filter(business_user_id=business_user_id)
+        if business_user_id and business_user_id.isdigit():
+            reviews = reviews.filter(business_user_id=int(business_user_id))
         
-        if reviewer_id:
-            reviews = reviews.filter(reviewer_id=reviewer_id)
+        if reviewer_id and reviewer_id.isdigit():
+            reviews = reviews.filter(reviewer_id=int(reviewer_id))
+
+        if not reviews.exists():
+            return []
 
         return reviews
     
