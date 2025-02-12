@@ -2,6 +2,7 @@ from rest_framework import serializers
 from offers_app.models import Offer, DetailOffer
 from rest_framework.exceptions import ValidationError
 from django.db.models import Min
+from rest_framework.reverse import reverse
 
 class DetailOfferSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=10, decimal_places=2, coerce_to_string=False)
@@ -24,7 +25,7 @@ class DetailOfferSerializer(serializers.ModelSerializer):
             ValidationError: If the value is less than -1 or equal to 0.
         """
 
-        if value < -1 or value == 0:
+        if value < -1:
             raise ValidationError({"detail": ["Revisions müssen mindestens -1 oder höher sein."]})
         return value
 
@@ -42,7 +43,7 @@ class DetailOfferSerializer(serializers.ModelSerializer):
             ValidationError: If the value is less than or equal to 0.
         """
 
-        if value <= 0:
+        if value < 0:
             raise ValidationError({"detail": ["Lieferzeit muss größer als 0 sein."]})
         return value
 
@@ -99,52 +100,58 @@ class DetailOfferSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-class OfferSerializer(serializers.ModelSerializer):
+class OfferReadSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
-    details = DetailOfferSerializer(many=True)
+    details = serializers.SerializerMethodField()
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
     user_details = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Offer
-        fields = ['id', 'user', 'title', 'image', 'description', 'created_at', 'updated_at' ,'details', 'min_price', 'min_delivery_time', 'user_details']
+        fields = ['id', 'user', 'title', 'image', 'description', 'created_at', 'updated_at',
+                  'details', 'min_price', 'min_delivery_time', 'user_details']
+
+    def get_details(self, obj):
+        """
+        Returns a list of dictionaries, each containing the id and url of a related DetailOffer object.
+
+        :param obj: The Offer object.
+        :return: A list of dictionaries, each containing the id and url of a related DetailOffer object.
+        """
+        request = self.context.get('request')
+        return [
+            {"id": detail.id, "url": reverse("detail-offer", args=[detail.id], request=request)}
+            for detail in obj.details.all()
+        ]
 
     def get_min_price(self, obj):
         """
-        Returns the minimum price of the offer's details.
-        
-        Args:
-            obj (Offer): The offer instance.
-        
-        Returns:
-            int: The minimum price of the offer's details.
-        """
+        Returns the minimum price of all related DetailOffer objects.
 
+        :param obj: The Offer object.
+        :return: The minimum price of all related DetailOffer objects.
+        """
         return obj.details.aggregate(Min("price"))["price__min"]
 
     def get_min_delivery_time(self, obj):
         """
-        Returns the minimum delivery time of the offer's details.
-        
-        Args:
-            obj (Offer): The offer instance.
-        
-        Returns:
-            int: The minimum delivery time of the offer's details.
-        """
+        Returns the minimum delivery time of all related DetailOffer objects.
 
+        :param obj: The Offer object.
+        :return: The minimum delivery time of all related DetailOffer objects.
+        """
         return obj.details.aggregate(Min("delivery_time_in_days"))["delivery_time_in_days__min"]
-    
+
     def get_user_details(self, obj):
         """
-        Returns a dictionary containing the first name, last name and username of the user that created the offer.
-        
+        Returns a dictionary containing the first name, last name, and username of the user associated with the Offer.
+    
         Args:
-            obj (Offer): The offer instance.
-        
+            obj (Offer): The Offer instance.
+    
         Returns:
-            dict: A dictionary containing the first name, last name and username of the offer's user.
+            dict: A dictionary containing the first name, last name, and username of the user.
         """
 
         return {
@@ -178,55 +185,60 @@ class OfferSerializer(serializers.ModelSerializer):
         
         return value
 
+class OfferWriteSerializer (serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    details = DetailOfferSerializer(many=True)
+
+    class Meta:
+        model = Offer
+        fields = ['id', 'user', 'title', 'image', 'description', 'details']
+
     def create(self, validated_data):
         """
-        Creates and saves an instance of the Offer model, and creates and saves 
-        the related DetailOffer instances.
+        Creates a new Offer and associated DetailOffer objects from validated data.
 
         Args:
-            validated_data (dict): A dictionary of validated data to create the instance with.
+            validated_data (dict): The validated data to create the Offer and DetailOffer objects with.
 
         Returns:
-            Offer: The created instance of the Offer model.
+            Offer: The newly created Offer object.
         """
-
-        details_data = validated_data.pop('details', [])
-
-        offer = Offer.objects.create(**validated_data)
+        details_data = validated_data.pop('details', [])  
+        offer = Offer.objects.create(**validated_data)  
 
         for detail_data in details_data:
             DetailOffer.objects.create(offer=offer, **detail_data)
 
         return offer
-        
-    def update_instance_with_details(instance, validated_data):
+
+    def update(self, instance, validated_data):
         """
-        Updates an existing instance of the Offer model and its related DetailOffer instances.
+        Updates an existing Offer and associated DetailOffer objects from validated data.
 
         Args:
-            instance (Offer): The existing Offer instance to update.
-            validated_data (dict): A dictionary of validated data to update the instance with.
+            instance (Offer): The Offer object to update.
+            validated_data (dict): The validated data to update the Offer and DetailOffer objects with.
 
         Returns:
-            Offer: The updated instance of the Offer model.
+            Offer: The updated Offer object.
         """
-        
-        details_data = validated_data.pop("details", None)
+
+        details_data = validated_data.pop('details', None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        if not details_data:
-            return instance
-
-        existing_details = {detail.offer_type: detail for detail in instance.details.all()}
-
-        for detail in details_data:
-            detail_instance = existing_details.get(detail["offer_type"])
-            if detail_instance:
-                for attr, value in detail.items():
-                    setattr(detail_instance, attr, value)
-                detail_instance.save()
+        if details_data is not None:
+            existing_details = {detail.offer_type: detail for detail in instance.details.all()}
+            for detail in details_data:
+                offer_type = detail["offer_type"]
+                if offer_type in existing_details:
+                    detail_instance = existing_details[offer_type]
+                    for attr, value in detail.items():
+                        setattr(detail_instance, attr, value)
+                    detail_instance.save()
+                else:
+                    DetailOffer.objects.create(offer=instance, **detail)
 
         return instance

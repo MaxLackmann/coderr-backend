@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .serializers import OfferSerializer, DetailOfferSerializer
+from .serializers import DetailOfferSerializer, OfferWriteSerializer , OfferReadSerializer
 from user_app.api.authentication import CombinedTokenAuthentication
 from user_app.api.permissions import IsAuthenticatedOrGuest
 from offers_app.api.services import OfferService
@@ -40,7 +40,7 @@ class OffersView(APIView):
 
         paginator = CustomPageNumberPagination()
         paginated_offers = paginator.paginate_queryset(offers, request)
-        serializer = OfferSerializer(paginated_offers, many=True)
+        serializer = OfferReadSerializer(paginated_offers, many=True)
 
         return paginator.get_paginated_response(serializer.data)
 
@@ -63,7 +63,7 @@ class OffersView(APIView):
         """
 
         try:
-            serializer = OfferSerializer(data=request.data)
+            serializer = OfferWriteSerializer (data=request.data)
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
@@ -89,10 +89,10 @@ class OfferDetailView(APIView):
 
         try:
             offer = OfferService.retrieve_offer(offer_id)
-            serializer = OfferSerializer(offer)
+            serializer = OfferReadSerializer(offer, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Offer.DoesNotExist:
-            return Response({"detail": ["Das Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
 
     def patch(self, request, offer_id):
@@ -112,11 +112,11 @@ class OfferDetailView(APIView):
             offer = OfferService.retrieve_offer(offer_id)
             OfferService.check_offer_user(offer, request.user)
 
-            serializer = OfferSerializer(offer, data=request.data, partial=True)
+            serializer = OfferWriteSerializer (offer, data=request.data, partial=True)
             if not serializer.is_valid():
                 return Response({"detail": ["Ungültige Daten. Bitte überprüfe deine Eingabe."]}, status=status.HTTP_400_BAD_REQUEST)
 
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Offer.DoesNotExist:

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from user_app.models import CustomUser
+import re
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -141,20 +142,20 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def validate_tel(self, tel):
         """
-        Validate the 'tel' field to ensure it only contains digits and is unique among all users.
+        Validate the 'tel' field to ensure it is unique among all users and matches the correct format.
 
-        Args:
-            tel (str): The phone number to validate.
+        The format is defined by the regular expression '^\d\s\-\+\(\]+$' which allows for digits, spaces, hyphen, plus, and parentheses.
 
-        Returns:
-            str: The validated phone number.
+        :param tel: The telephone number to validate.
+        :return: The validated telephone number.
 
         Raises:
-            serializers.ValidationError: If the phone number contains non-digit characters or is already in use.
+            serializers.ValidationError: If the telephone number is invalid or already taken.
         """
+        phone_regex = re.compile(r'^[\d\s\-\+\(\)]+$')
 
-        if tel and not tel.isdigit():
-            raise serializers.ValidationError({"detail": ["Telefonnummer darf nur Zahlen enthalten."]})
+        if not phone_regex.match(tel):
+            raise serializers.ValidationError({"detail": ["Telefonnummer darf nur Ziffern und die Zeichen '+', '-', '()', und Leerzeichen enthalten."]})
 
         if CustomUser.objects.filter(tel=tel).exclude(id=self.instance.id).exists():
             raise serializers.ValidationError({"detail": ["Diese Telefonnummer ist bereits vergeben."]})
