@@ -6,13 +6,18 @@ class IsAuthenticatedOrGuest(BasePermission):
         """
         Determines if the request has permission to access the view.
 
-        Permissions are granted based on the following criteria:
-        - Allows access if the request user is authenticated and a staff member.
-        - Allows access if the request user is authenticated.
-        - Allows access if the request has a valid GuestToken.
+        Permissions are granted based on the request method and the user's authentication status:
 
-        Returns True if any of the conditions are met, otherwise False.
+        - Allows access if the request method is "GET".
+        - Allows access if the request user is an authenticated staff user.
+        - Allows access if the request user is an authenticated user.
+        - Allows access if the request user is an authenticated guest user.
+
+        Returns False if none of the conditions are met.
         """
+
+        if request.method == "GET":
+            return True
         
         if request.user.is_authenticated and request.user.is_staff:
             return True
