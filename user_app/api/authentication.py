@@ -5,16 +5,19 @@ from user_app.models import GuestToken
 class CombinedTokenAuthentication(TokenAuthentication):
     def authenticate(self, request):
         """
-        Authenticate the given request using the following rules:
+        Authenticates a request using the provided token.
 
-        1. If a `auth-token` header is present, use it to authenticate the user.
-        2. If no `auth-token` header is present, fall back to regular token authentication.
-        3. If regular token authentication fails, return an authentication failure response.
+        If the request method is GET, returns None without attempting authentication.
+        If the token is invalid or expired, raises AuthenticationFailed with an appropriate error message.
+        Otherwise, returns a tuple of (user, auth_token) if authentication is successful.
 
-        :param request: The request object to authenticate.
-        :return: A tuple of user and auth objects if authentication is successful, None if not.
-        :raises: AuthenticationFailed if authentication fails.
+        :param request: The request to authenticate.
+        :return: A tuple of (user, auth_token) if authentication is successful, None if the request method is GET.
+        :raises: AuthenticationFailed if the token is invalid or expired.
         """
+
+        if request.method == "GET":
+            return None
 
         token_key = self.get_token_from_request(request)
         if not token_key:
