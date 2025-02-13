@@ -126,6 +126,7 @@ class OrderDetailView(APIView):
 
         Raises a 403 Forbidden error if the user is not an Admin.
         """
+        
         try:
             order = OrderService.retrieve_order(order_id)
             self.check_object_permissions(request, order)
@@ -137,21 +138,21 @@ class OrderDetailView(APIView):
         except PermissionDenied:
             return Response({"detail": ["Nur Admin kann diese Bestellung loeschen."]}, status=status.HTTP_403_FORBIDDEN)
         
-    def put(self, request, order_id):
+    def put(self):
         """
-        PUT /orders/{id}/ - Vollständige Aktualisierung einer Bestellung (nicht erlaubt)
+        Not allowed.
 
-        Liefert eine 405 Method Not Allowed-Antwort, wenn der Aufruf ausfuehrlich ist.
+        Returns a 405 Method Not Allowed response if the HTTP PUT method is used.
+
+        :return: A JSON response containing an error message with an HTTP 405 Method Not Allowed status.
         """
-
         return Response({"detail": ["Eine vollständige Aktualisierung ist nicht erlaubt."]}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
 class OrderCountView(APIView):
-    def get(self, request, business_user_id):
+    def get(self, business_user_id):
         """
         Retrieves the count of orders for a given business user that are currently in progress.
     
-        :param request: The HTTP request object.
         :param business_user_id: The ID of the business user to count in-progress orders for.
         :return: A JSON response containing the order count with an HTTP 200 OK status.
         """
@@ -160,11 +161,10 @@ class OrderCountView(APIView):
         return Response({"order_count": order_count}, status=status.HTTP_200_OK)
     
 class CompletedOrderCountView(APIView):
-    def get(self, request, business_user_id):
+    def get(self, business_user_id):
         """
         Retrieves the count of completed orders for a given business user.
     
-        :param request: The HTTP request object.
         :param business_user_id: The ID of the business user to count completed orders for.
         :return: A JSON response containing the completed order count with an HTTP 200 OK status.
         """
