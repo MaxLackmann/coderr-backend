@@ -92,7 +92,7 @@ class OfferDetailView(APIView):
             serializer = OfferReadSerializer(offer, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Offer.DoesNotExist:
-            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Das Angebot existiert nicht."}, status=status.HTTP_404_NOT_FOUND)
 
 
     def patch(self, request, offer_id):
