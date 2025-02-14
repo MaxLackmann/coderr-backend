@@ -86,22 +86,6 @@ class OfferService:
     
         return offers
 
-    
-    @staticmethod
-    def check_offer_user(offer, user):
-        """
-        Check if the given user is the owner of the offer.
-
-        :param offer: The Offer object to check.
-        :param user: The user to verify as the owner of the offer.
-        :raises PermissionDenied: If the user is not the owner of the offer.
-        :return: The offer if the user is the owner.
-        """
-
-        if offer.user != user:
-            raise PermissionDenied()
-        return offer
-
     @staticmethod
     def retrieve_offer(offer_id):
         """

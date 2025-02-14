@@ -9,7 +9,7 @@ from offers_app.api.services import OfferService
 from offers_app.api.pagination import CustomPageNumberPagination
 from offers_app.models import Offer, DetailOffer
 from rest_framework.exceptions import PermissionDenied
-from offers_app.api.permissions import IsBusinessUser
+from offers_app.api.permissions import IsBusinessUser, CanModifyOffer
 
 class OffersView(APIView):
     permission_classes = [IsAuthenticatedOrGuest, IsBusinessUser]
@@ -75,7 +75,7 @@ class OffersView(APIView):
 
 class OfferDetailView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
-    permission_classes = [IsAuthenticatedOrGuest]
+    permission_classes = [IsAuthenticatedOrGuest, CanModifyOffer]
 
     def get(self, request, offer_id):
         """
@@ -103,14 +103,14 @@ class OfferDetailView(APIView):
 
         Returns a JSON representation of the updated offer if the request is valid.
 
-        Raises a 400 Bad Request error if the request body is invalid.
-
         Raises a 403 Forbidden error if the user is not the owner of the offer.
+
+        Raises a 400 Bad Request error if the request body is invalid.
         """
 
         try:
             offer = OfferService.retrieve_offer(offer_id)
-            OfferService.check_offer_user(offer, request.user)
+            self.check_object_permissions(request, offer)
 
             serializer = OfferWriteSerializer (offer, data=request.data, partial=True)
             if not serializer.is_valid():
@@ -119,35 +119,36 @@ class OfferDetailView(APIView):
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        except Offer.DoesNotExist:
-            return Response({"detail": ["Das angeforderte Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND)
         except PermissionDenied:
             return Response({"detail": ["Nicht Autorisiert zu bearbeiten."]}, status=status.HTTP_403_FORBIDDEN)
+        except Offer.DoesNotExist:
+            return Response({"detail": ["Das angeforderte Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, offer_id):
         """
         Deletes an offer by its ID.
 
-        Raises a 404 Not Found error if the offer does not exist.
-
         Raises a 403 Forbidden error if the user is not the owner of the offer.
+
+        Raises a 404 Not Found error if the offer does not exist.
         """
         
         try:
             offer = OfferService.retrieve_offer(offer_id)
-            OfferService.check_offer_user(offer, request.user)
+            self.check_object_permissions(request, offer)
             offer.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        except Offer.DoesNotExist:
-            return Response({"detail": ["Das angeforderte Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND)
+        
         except PermissionDenied:
             return Response({"detail": ["Nicht Autorisiert zu loeschen."]}, status=status.HTTP_403_FORBIDDEN)
+        except Offer.DoesNotExist:
+            return Response({"detail": ["Das angeforderte Angebot existiert nicht."]}, status=status.HTTP_404_NOT_FOUND)
 
 class DetailOfferView(APIView):
     authentication_classes = [CombinedTokenAuthentication]
     permission_classes = [IsAuthenticatedOrGuest]
 
-    def get(self, request, detailoffer_id):
+    def get(self, detailoffer_id):
         """
         Retrieves a detail offer by its ID.
 
