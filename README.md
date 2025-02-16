@@ -1,25 +1,25 @@
 # Coderr Backend
 
-Das Coderr Backend stellt die API für die Coderr-Plattform bereit. Es ermöglicht die Verwaltung von Angeboten, Bestellungen, Benutzerprofilen und Bewertungen. Dieses Projekt wurde mit Django REST Framework (DRF) entwickelt.
+The Coderr Backend provides the API for the Coderr platform. It enables the management of offers, orders, user profiles, and reviews. This project was developed using Django REST Framework (DRF).
 
 ## Features
 
-- Nutzerregistrierung & Authentifizierung
-- Angebotserstellung & Verwaltung
-- Bestellmanagement mit Status-Updates
-- Bewertungsfunktion für Business-User
-- API mit vollständiger Filter-, Such- und Sortierfunktionalität
+- User registration & authentication
+- Offer creation & management
+- Order management with status updates
+- Review function for business users
+- API with full filtering, search, and sorting functionality
 
 ## Installation & Setup
 
-### Voraussetzungen
+### Requirements
 
 - Python 3.10+
 - Django 4.0
-- PostgreSQL oder SQLite (für lokale Tests)
-- Virtual env(empfohlen für virtuelle Umgebungen)
+- PostgreSQL oder SQLite (for local testing)
+- Virtual env(recommended for virtual environments)
 
-### Projekt klonen & Abhängigkeiten installieren
+### Clone project & install dependencies
 
 ```bash
 git clone https://github.com/MaxLackmann/coderr-backend.git
@@ -30,19 +30,19 @@ venv\Scripts\activate      # Windows
 pip install -r requirements.txt
 ```
 
-### Datenbankmigrationen ausführen
+### Run database migrations
 
 ```bash
 python manage.py migrate
 ```
 
-### Superuser (Admin) erstellen
+### Create superuser (Admin)
 
 ```bash
 python manage.py createsuperuser
 ```
 
-### Server starten
+### Start server
 
 ```bash
 python manage.py runserver
@@ -50,7 +50,7 @@ python manage.py runserver
 
 ## API Endpoints
 
-### Angebote
+### Offers
 
 GET /offers/ - Liste aller Angebote mit Filtermöglichkeiten  
 POST /offers/ - Erstellen eines neuen Angebots  
@@ -58,31 +58,31 @@ GET /offers/{id}/ - Details eines spezifischen Angebots
 PATCH /offers/{id}/ - Angebot aktualisieren  
 DELETE /offers/{id}/ - Angebot löschen  
 
-### Bestellungen
+### Orders
 
 GET /orders/ - Liste der Bestellungen des Users  
 POST /orders/ - Neue Bestellung erstellen  
 PATCH /orders/{id}/ - Status der Bestellung ändern (nur Business-User)  
 DELETE /orders/{id}/ - Bestellung löschen (nur Admins)  
 
-### Benutzerprofile & Authentifizierung
+### User Profiles & Authentication
 
 POST /login/ - Nutzer-Login  
 POST /registration/ - Nutzer-Registrierung  
 GET /profile/{id}/ - Nutzerprofil abrufen  
 PATCH /profile/{id}/ - Profil aktualisieren  
 
-### Bewertungen
+### Reviews
 
 GET /reviews/ - Liste aller Bewertungen  
 POST /reviews/ - Bewertung erstellen  
 PATCH /reviews/{id}/ - Bewertung bearbeiten  
 DELETE /reviews/{id}/ - Bewertung löschen  
 
-## Authentifizierung
+## Authentication
 
-Die API verwendet Token-Authentifizierung.  
-Nach dem Login erhält der Nutzer einen Token, der in den Headern bei Anfragen mitgesendet werden muss:
+The API uses token authentication.
+After logging in, the user receives a token that must be sent in the headers with requests:
 
 ```json
 {
@@ -90,7 +90,6 @@ Nach dem Login erhält der Nutzer einen Token, der in den Headern bei Anfragen m
 }
 ```
 
-## Lizenz & Autor
+## Author
 
-Dieses Projekt wurde von Max Lackmann entwickelt.  
-Lizenz: MIT License (falls nicht anders gewünscht).
+This project was developed by Max Lackmann.

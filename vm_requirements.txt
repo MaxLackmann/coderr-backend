@@ -1,6 +1,6 @@
-asgiref==3.7.2  # Zuverlässige und stabile Version
-Django==4.2.5   # LTS-Version (Long-Term Support), für Stabilität empfohlen
-django-cors-headers==3.14.0  # Gut getestete Version, kompatibel mit Django 4.x
-djangorestframework==3.14.0  # Stabil und weit verbreitet
-sqlparse==0.4.4  # Funktioniert gut mit Django 4.x
-tzdata==2023.3  # Stabil und getestet
+asgiref>=3.7.2,<3.8
+Django>=4.2.5,<4.3
+django-cors-headers>=3.14.0,<3.15
+djangorestframework>=3.14.0,<3.15
+sqlparse>=0.4.4,<0.5
+tzdata>=2023.3
