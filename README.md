@@ -52,32 +52,32 @@ python manage.py runserver
 
 ### Offers
 
-GET /offers/ - Liste aller Angebote mit Filtermöglichkeiten  
-POST /offers/ - Erstellen eines neuen Angebots  
-GET /offers/{id}/ - Details eines spezifischen Angebots  
-PATCH /offers/{id}/ - Angebot aktualisieren  
-DELETE /offers/{id}/ - Angebot löschen  
+GET /offers/ - List of all offers with filtering options
+POST /offers/ - Create a new offer
+GET /offers/{id}/ - Details of a specific offer
+PATCH /offers/{id}/ - Update an offer
+DELETE /offers/{id}/ - Delete an offer
 
 ### Orders
 
-GET /orders/ - Liste der Bestellungen des Users  
-POST /orders/ - Neue Bestellung erstellen  
-PATCH /orders/{id}/ - Status der Bestellung ändern (nur Business-User)  
-DELETE /orders/{id}/ - Bestellung löschen (nur Admins)  
+GET /orders/ - List of the user's orders
+POST /orders/ - Create a new order
+PATCH /orders/{id}/ - Change the status of an order (business users only)
+DELETE /orders/{id}/ - Delete an order (admins only)
 
 ### User Profiles & Authentication
 
-POST /login/ - Nutzer-Login  
-POST /registration/ - Nutzer-Registrierung  
-GET /profile/{id}/ - Nutzerprofil abrufen  
-PATCH /profile/{id}/ - Profil aktualisieren  
+POST /login/ - User login
+POST /registration/ - User registration
+GET /profile/{id}/ - Retrieve user profile
+PATCH /profile/{id}/ - Update profile
 
 ### Reviews
 
-GET /reviews/ - Liste aller Bewertungen  
-POST /reviews/ - Bewertung erstellen  
-PATCH /reviews/{id}/ - Bewertung bearbeiten  
-DELETE /reviews/{id}/ - Bewertung löschen  
+GET /reviews/ - List of all reviews
+POST /reviews/ - Create a review
+PATCH /reviews/{id}/ - Edit a review
+DELETE /reviews/{id}/ - Delete a review
 
 ## Authentication
 
@@ -86,7 +86,7 @@ After logging in, the user receives a token that must be sent in the headers wit
 
 ```json
 {
-  "Authorization": "Token <dein-token>"
+  "Authorization": "Token <your-token>"
 }
 ```
 
