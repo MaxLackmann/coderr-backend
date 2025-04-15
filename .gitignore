@@ -1,19 +1,33 @@
+# === Python Build ===
+__pycache__/
+*.py[cod]
 
+# === Virtual Environment ===
+env/
 venv/
+
+# === Environment Files ===
 .env
 *.env
 
-db.sqlite3
+# === Database ===
 *.sqlite3
 *.db
+db.sqlite3
 
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# === Logs ===
+*.log
+*.err
+debug.log
 
+# === Media / Uploaded Files ===
 media/
 
-logs/
-*.log
-debug.log
+# === IDE / Tools ===
+.vscode/
+.idea/
+
+# === OS Metadata ===
+.DS_Store
+Thumbs.db
+
